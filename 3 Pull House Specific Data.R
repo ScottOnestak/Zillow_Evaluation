@@ -1,10 +1,12 @@
 #Project: Zillow Tracker
 #Code: 3 Pull House Specific Data
 #Author: Scott Onestak
-#Last Executed: 1/26/2022
+#Last Executed: 1/28/2022
 
 
 #----------------------------------   Cannot run with chrome open   ----------------------------------
+#Restart R session: .rs.restartR()
+
 
 #Packages
 library(rvest)
@@ -17,14 +19,17 @@ library(RSelenium)
 
 #Selenium
 ##binman::list_versions("chromedriver") <- command to get the chrome version number to use
-port = 1000L
+port = 2000L
 
 #Read in prior
 prior = read.csv("Data/finalDataset.csv",header=T,stringsAsFactors=F)
 LFRprior = read.csv("Data/listedForRent.csv",header=T,stringsAsFactors=F)
 
+#Create list of zpids to skip because they've already had their data pulled
+zpid_skip = c(prior$zpid,LFRprior$zpid)
+
 #Loop through list of sold and collect more detailed information... change batch number with run
-theListDedup = read.csv("Data/batches/batch_2.csv",stringsAsFactors = F, header = T)
+theListDedup = read.csv("Data/theListDedup.csv",stringsAsFactors = F, header = T)
 cat("Homes to Scrape: ",dim(theListDedup)[1],"\n",sep="")
 finalDatasetMade = FALSE
 finalDataset = NA
@@ -32,18 +37,14 @@ forRentMade = FALSE
 listedForRent = NA
 checkAgain = FALSE
 current = theListDedup
-counter = 1
+i = 1
+j = 0
 
-#While there are still accounts to check or the counter has not run over 20 times
-while(dim(current)[1]>0 & counter<20){
+#Loop through scraper
+while(i <= dim(theListDedup)[1] & j <= 50){
+  cat(i,"\n",sep="")
   
-  #Set starting parameters
-  cat("Run: ",counter," To check: ",dim(current)[1],"\n",sep="")
-  toCheckAgain = NA
-  
-  #Loop through scraper
-  for(i in seq(from=1,to=dim(current)[1],by=1)){
-    cat(i,"\n",sep="")
+  if(!current[i,"zpid"] %in% zpid_skip){
     theLink = paste(current[i,"url"],sep="")
     
     #First try downloading the file
@@ -56,8 +57,9 @@ while(dim(current)[1]>0 & counter<20){
         html_text()
     } else {
       #if that fails...try Selenium method
+      j = j + 1
       port = as.integer(port+1)
-      rD = rsDriver(browser="chrome", port=port, chromever = "97.0.4692.36", verbose = F)
+      rD = rsDriver(browser="chrome", port=port, chromever = "97.0.4692.36", geckover = NULL, verbose = F)
       remDr = rD[["client"]]
       remDr$navigate(theLink)
       
@@ -80,7 +82,10 @@ while(dim(current)[1]>0 & counter<20){
         html_nodes("script") %>%
         html_text()
       
-      remDr$close()
+      remDr$quit()
+      rD$server$stop()
+      gc(remDr,verbose = F)
+      gc(rD,verbose = F)
     }
     
     
@@ -89,13 +94,13 @@ while(dim(current)[1]>0 & counter<20){
       gotoStr = NA
       temp = NA
       for(j in seq(from=1,to=length(theProperty),by=1)){
-        if(str_detect(theProperty[j],"sun")){
+        if(str_detect(toupper(theProperty[j]),"YEARBUILT")){
           gotoStr = j
         }
       }
       
       if(!is.na(gotoStr)){
-        Sys.sleep(12)
+        Sys.sleep(5)
         temp = fromJSON(fromJSON(str_replace_all(str_replace_all(theProperty[gotoStr],"<!--",""),"-->",""))$apiCache)
         
         status = tryCatch(temp[[2]]$property$homeStatus,error=function(e){NA})
@@ -154,10 +159,12 @@ while(dim(current)[1]>0 & counter<20){
         price_history_holder$event = toupper(price_history_holder$event)
         listDate = NA
         listPrice = NA
-        for(k in seq(from=dim(price_history_holder)[1],to=1,by=-1)){
-          if(price_history_holder[k,"event"] == "LISTED FOR SALE"){
-            listDate = price_history_holder[k,"date"]
-            listPrice = price_history_holder[k,"price"]
+        if(dim(price_history_holder)[1]>0){
+          for(k in seq(from=dim(price_history_holder)[1],to=1,by=-1)){
+            if(price_history_holder[k,"event"] == "LISTED FOR SALE"){
+              listDate = price_history_holder[k,"date"]
+              listPrice = price_history_holder[k,"price"]
+            }
           }
         }
       } else {
@@ -196,6 +203,9 @@ while(dim(current)[1]>0 & counter<20){
       #check site status
       check4 = GET(scores)
       theCheck4 = unlist(http_status(check4)$reason)
+      walk_score = NA
+      transit_score = NA
+      bike_score = NA
       
       if(theCheck4 == "OK"){
         returned = tryCatch(paste(read_html(scores) %>% 
@@ -330,16 +340,10 @@ while(dim(current)[1]>0 & counter<20){
     }
   }
   
-  #Update for next run of the while loop
-  current=toCheckAgain
-  finalDatasetMade = FALSE
-  forRentMade = FALSE
-  checkAgain = FALSE
-  counter = counter + 1
-  
-  cat("\n")
+  #Update counter
+  i = i + 1
 }
-rD$server$stop()
+
 
 #if new, append and write out
 if(is.null(dim(finalDataset))==FALSE){
