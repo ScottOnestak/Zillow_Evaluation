@@ -1,7 +1,7 @@
 #Project: Zillow Tracker
 #Code: 3 Pull House Specific Data
 #Author: Scott Onestak
-#Last Executed: 1/28/2022
+#Last Executed: 1/30/2022
 
 
 #----------------------------------   Cannot run with chrome open   ----------------------------------

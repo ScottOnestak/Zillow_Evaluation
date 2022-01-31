@@ -1,7 +1,7 @@
 #Project: Zillow Tracker
 #Code: 1 Pull Sold Housing Data
 #Author: Scott Onestak
-#Last Executed: 1/25/2022
+#Last Executed: 1/30/2022
 
 #Packages
 library(rvest)
@@ -11,8 +11,11 @@ library(httr)
 library(stringr)
 library(jsonlite)
 
+#read in previous
+theListDedup_prev = read.csv("Data/theListDedup.csv",header=T,stringsAsFactors=F)
+
 #Set the zip codes to pull
-zipcode_search = c(15206,15217,15218,15221,15232)
+zipcode_search = c(15206,15208,15217,15218,15221,15232)
 numberoftiles = 40 #This is the number of tiles of listings that show up on Zillow
 
 #Run through results to get webpages for the sold houses
@@ -116,7 +119,12 @@ colnames(theList) = c("Address","Street","City","State","ZipCode","zpid","url","
 theList$soldDate = as.Date(theList$soldDate,format="%m/%d/%Y")
 
 #Dedup the list... in case of multiple sells, only the most recent one will show but will show as multiple in list
-theListDedup = unique(theList) %>% filter(!Type %in% c("APARTMENT","MANUFACTURED","LOT","CONDO"))
+theListDeduped = unique(theList) %>% filter(!Type %in% c("APARTMENT","MANUFACTURED","LOT","CONDO"))
+newlistings = setdiff(theListDeduped$zpid,theListDedup_prev$zpid)
+theListingsAppend = theListDeduped %>% filter(zpid %in% newlistings)
+
+#Append new listings and write out
+theListDedup = rbind(theListDedup_prev,theListingsAppend)
 write.csv(theListDedup,"Data/theListDedup.csv",row.names = FALSE)
 
 
