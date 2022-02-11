@@ -45,6 +45,14 @@ suburbsKeep = unlist(theSuburbs %>% filter(count > 20) %>% select(suburb))
 theData = theData %>% filter(suburb %in% suburbsKeep)
 theData$suburb = as.factor(theData$suburb)
 
+#tax assessed to list price ratio
+taxAssessed = theData %>% 
+                mutate(taxAssessedDiff = (taxAssessedValue - soldPrice)/soldPrice + 1) %>%
+                group_by(suburb) %>%
+                summarise(medTaxAssessedDiff = median(taxAssessedDiff,na.rm=T),
+                          meanTaxAssessedDiff = mean(taxAssessedDiff,na.rm=T))
+write.csv(taxAssessed,"Data/taxAssessedToSoldPriceAdj.csv",row.names = FALSE)
+
 #try to pull out most important variables in predicting price
 h2o.init(max_mem_size = "16g")
 y = "soldPriceAdj"
