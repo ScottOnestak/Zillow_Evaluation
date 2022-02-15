@@ -47,6 +47,7 @@ theData$suburb = as.factor(theData$suburb)
 
 #tax assessed to list price ratio
 taxAssessed = theData %>% 
+                filter(!is.na(soldPrice) & !is.na(taxAssessedValue)) %>%
                 mutate(taxAssessedDiff = (taxAssessedValue - soldPrice)/soldPrice + 1) %>%
                 group_by(suburb) %>%
                 summarise(medTaxAssessedDiff = median(taxAssessedDiff,na.rm=T),

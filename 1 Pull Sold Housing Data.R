@@ -1,7 +1,9 @@
 #Project: Zillow Tracker
 #Code: 1 Pull Sold Housing Data
 #Author: Scott Onestak
-#Last Executed: 1/30/2022
+#Last Executed: 2/14/2022
+
+#CORRECT DATES TO BE STRINGS BEFORE WRITING OUT NEXT RUN!!!
 
 #Packages
 library(rvest)
