@@ -2,11 +2,11 @@
 Scrape Zillow data for recently sold houses in the area to aid home search <br/>
 Adjust price to today by using market data from Redfin <br/>
 Analyze patterns in the market <br/>
-Build GBM to understand how certain aspects of the home affect the sales price <br/>
+Build GBM to understand how certain aspects of the home affect the sales price <br/><br/>
 
 
 
-Top-Level Conclusions:
+Top-Level Conclusions:<br/><br/>
 
 -It will depend on the home and suburb, but most homes are selling for 5% under list price as of Q4 2021 <br/>
 -Suburb and living area are the most important factors in a home's price and will account for a majority of the variability <br/>
