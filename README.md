@@ -4,6 +4,8 @@ Adjust price to today by using market data from Redfin
 Analyze patterns in the market
 Build GBM to understand how certain aspects of the home affect the sales price
 
+
+
 Top-Level Conclusions:
 
 -It will depend on the home and suburb, but most homes are selling for 5% under list price as of Q4 2021
