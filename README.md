@@ -1,7 +1,10 @@
 # Zillow_Evaluation
 Scrape Zillow data for recently sold houses in the area to aid home search
+
 Adjust price to today by using market data from Redfin
+
 Analyze patterns in the market
+
 Build GBM to understand how certain aspects of the home affect the sales price
 
 
