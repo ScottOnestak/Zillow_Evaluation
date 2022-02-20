@@ -1,7 +1,7 @@
 #Project: Zillow Tracker
 #Code: 7 Evaluate Test Cases
 #Author: Scott Onestak
-#Last Executed: 2/8/2022
+#Last Executed: 2/17/2022
 
 #library
 library(h2o)
@@ -95,9 +95,13 @@ baseheating = unlist(heating %>% filter(heatingForcedAir == 1) %>% select(soldPr
 heating = heating %>% mutate(ForcedAirHeatingComp = (soldPricePred-baseheating)/baseheating)
 
 #Calculate Difference by Suburb
-suburb = testCases %>% group_by(suburb) %>% summarise(soldPricePred = mean(soldPricePred,na.rm=T))
+suburb = testCases %>% filter(beds == 3 & baths == 2 & livingArea == 1900) %>% group_by(suburb) %>% summarise(soldPricePred = mean(soldPricePred,na.rm=T))
 basesuburb = unlist(suburb %>% filter(suburb == "Regent Square") %>% select(soldPricePred))
 suburb = suburb %>% mutate(suburbComp = (soldPricePred-basesuburb)/basesuburb)
+
+suburbPrice = testCases %>% filter(beds == 3 & baths == 2 & livingArea == 1500) %>% group_by(suburb) %>% summarise(soldPricePred = mean(soldPricePred,na.rm=T))
+basesuburbprice = unlist(suburbPrice %>% filter(suburb == "Regent Square") %>% select(soldPricePred))
+suburbPrice = suburbPrice %>% mutate(suburbComp = (soldPricePred-basesuburbprice)/basesuburbprice)
 
 #Calculate Difference by Bed
 bedSuburb = testCases %>% 
@@ -170,5 +174,6 @@ write.csv(heatingSuburb,"Results/test_results/heatingBySuburb.csv",row.names = F
 write.csv(parking,"Results/test_results/parking.csv",row.names = F)
 write.csv(parkingSuburb,"Results/test_results/parkingBySuburb.csv",row.names = F)
 write.csv(suburb,"Results/test_results/suburb.csv",row.names = F)
+write.csv(suburbPrice,"Results/test_results/suburbPricepoint.csv",row.names = F)
 
 

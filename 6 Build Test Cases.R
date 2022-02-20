@@ -1,7 +1,7 @@
 #Project: Zillow Tracker
 #Code: 6 Build Test Cases
 #Author: Scott Onestak
-#Last Executed: 2/8/2022
+#Last Executed: 2/14/2022
 
 #library
 library(tidyverse)
@@ -28,10 +28,19 @@ median_area_ratio = round(median(area_ratios,na.rm=T),2)
 #Get min and maxes for testing
 min_baths = min(theData$baths,na.rm=T)
 max_baths = max(theData$baths,na.rm=T)
+med_baths = median(theData$baths,na.rm=T)
 min_livingArea = min(theData$livingArea,na.rm=T)
 max_livingArea = max(theData$livingArea,na.rm=T)
+med_livingArea = median(theData$livingArea,na.rm=T)
 min_bed = min(theData$bed,na.rm=T)
 max_bed = max(theData$bed,na.rm=T)
+med_bed = median(theData$bed,na.rm=T)
+
+#Get medians for price range
+theDataPriceFilter = theData %>% filter(soldPrice >= 150000 & soldPrice <= 250000)
+med_baths_price = median(theDataPriceFilter$baths,na.rm=T)
+med_livingArea_price = median(theDataPriceFilter$livingArea,na.rm=T)
+med_bed_price = median(theDataPriceFilter$bed,na.rm=T)
 
 #Do some reasonableness adjustments... some max and mins are extreme/questionable data values
 min_baths = 1

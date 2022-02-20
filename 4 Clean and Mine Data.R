@@ -1,7 +1,7 @@
 #Project: Zillow Tracker
 #Code: 4 Clean and Mine Data
 #Author: Scott Onestak
-#Last Executed: 2/14/2022
+#Last Executed: 2/20/2022
 
 #Packages
 library(tidyverse)

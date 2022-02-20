@@ -1,7 +1,7 @@
 #Project: Zillow Tracker
 #Code: 1 Pull Sold Housing Data
 #Author: Scott Onestak
-#Last Executed: 2/14/2022
+#Last Executed: 2/20/2022
 
 #CORRECT DATES TO BE STRINGS BEFORE WRITING OUT NEXT RUN!!!
 
@@ -12,6 +12,8 @@ library(tidyr)
 library(httr)
 library(stringr)
 library(jsonlite)
+
+options(scipen=999)
 
 #read in previous
 theListDedup_prev = read.csv("Data/theListDedup.csv",header=T,stringsAsFactors=F)
@@ -122,8 +124,14 @@ theList$soldDate = as.Date(theList$soldDate,format="%m/%d/%Y")
 
 #Dedup the list... in case of multiple sells, only the most recent one will show but will show as multiple in list
 theListDeduped = unique(theList) %>% filter(!Type %in% c("APARTMENT","MANUFACTURED","LOT","CONDO"))
-newlistings = setdiff(theListDeduped$zpid,theListDedup_prev$zpid)
-theListingsAppend = theListDeduped %>% filter(zpid %in% newlistings)
+theListDeduped$soldDate = as.character(theListDeduped$soldDate)
+theListDeduped$zpid = as.numeric(theListDeduped$zpid)
+old = theListDedup_prev %>% select(zpid,soldDate)
+new = theListDeduped %>% select(zpid,soldDate)
+
+
+newlistings = setdiff(new,old)
+theListingsAppend = theListDeduped %>% inner_join(.,newlistings,by=c("zpid","soldDate"))
 
 #Append new listings and write out
 theListDedup = rbind(theListDedup_prev,theListingsAppend)

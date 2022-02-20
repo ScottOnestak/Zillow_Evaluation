@@ -1,7 +1,7 @@
 #Project: Zillow Tracker
 #Code: 3 Pull House Specific Data
 #Author: Scott Onestak
-#Last Executed: 2/14/2022
+#Last Executed: 2/20/2022
 
 
 #----------------------------------   Cannot run with chrome open   ----------------------------------
@@ -26,7 +26,8 @@ prior = read.csv("Data/finalDataset.csv",header=T,stringsAsFactors=F)
 LFRprior = read.csv("Data/listedForRent.csv",header=T,stringsAsFactors=F)
 
 #Create list of zpids to skip because they've already had their data pulled
-zpid_skip = c(prior$zpid,LFRprior$zpid)
+zpid_skip = rbind(prior %>% select(zpid,soldDate),
+                  LFRprior %>% select(zpid,soldDate))
 
 #Loop through list of sold and collect more detailed information... change batch number with run
 theListDedup = read.csv("Data/theListDedup.csv",stringsAsFactors = F, header = T)
@@ -44,7 +45,7 @@ j = 0
 while(i <= dim(theListDedup)[1] & j <= 50){
   cat(i,"\n",sep="")
   
-  if(!current[i,"zpid"] %in% zpid_skip){
+  if(dim(zpid_skip %>% inner_join(.,current[i,c("zpid","soldDate")],by=c("zpid","soldDate")))[1]<=0){
     theLink = paste(current[i,"url"],sep="")
     
     #First try downloading the file
