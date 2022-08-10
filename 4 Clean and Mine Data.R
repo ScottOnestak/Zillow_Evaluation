@@ -1,7 +1,7 @@
 #Project: Zillow Tracker
 #Code: 4 Clean and Mine Data
 #Author: Scott Onestak
-#Last Executed: 2/20/2022
+#Last Executed: 7/10/2022
 
 #Packages
 library(tidyverse)
@@ -196,6 +196,15 @@ theDataset$roof[theDataset$roof == ""] = NA
 #Calculate days to sale
 theDataset$soldDate = as.Date(theDataset$soldDate)
 theDataset$listDate = as.Date(theDataset$listDate)
+#List Date is within 1.5 years of sold date... else it's probably outdated
+theDataset$listDate = ifelse(!is.na(theDataset$listDate) & !is.na(theDataset$soldDate),
+                             ifelse(as.numeric(theDataset$soldDate - theDataset$listDate) < 500 &
+                                      as.numeric(theDataset$soldDate - theDataset$listDate) > 0,
+                                    as.character(theDataset$listDate),
+                                    NA),
+                             NA)
+theDataset$listPrice = ifelse(!is.na(theDataset$listDate),theDataset$listPrice,NA)
+theDataset$listDate = as.Date(theDataset$listDate)
 theDataset$daysToSale = ifelse((!is.na(theDataset$soldDate) & !is.na(theDataset$listDate)),theDataset$soldDate - theDataset$listDate,NA)
 
 #Calculate sale differential
@@ -221,6 +230,7 @@ theDataset$phraseRenovated = ifelse(str_detect(toupper(theDataset$description),"
 theDataset$phraseOpen = ifelse(str_detect(toupper(theDataset$description),"OPEN"),1,0)
 theDataset$phraseLocation = ifelse(str_detect(toupper(theDataset$description),"LOCATION"),1,0)
 theDataset$phraseExclamation = ifelse(str_detect(toupper(theDataset$description),"!"),1,0)
+
 
 #Remove unneccessary variables and write out file
 cleanedDataset = theDataset %>% select(-c("status","isZillowOwned","lotAreaUnits","hoaFee","garageCapacity",

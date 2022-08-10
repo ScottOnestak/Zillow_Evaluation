@@ -1,7 +1,9 @@
 #Project: Zillow Tracker
 #Code: 8 Evaluate Out of Sample
 #Author: Scott Onestak
-#Last Executed: 2/20/2022
+#Last Executed: 4/18/2022
+
+#Last model update 4/6/2022
 
 #Packages
 library(tidyverse)
@@ -48,7 +50,7 @@ theData = theData %>% filter(suburb %in% suburbsKeep)
 theData$suburb = as.factor(theData$suburb)
 
 #Get the test data points
-theTestData = theData %>% filter(soldDate >= as.Date("2022-01-28") & !is.na(livingArea))
+theTestData = theData %>% filter(soldDate >= as.Date("2022-04-06") & !is.na(livingArea))
 
 #read in gbm model and execute
 h2o.init(max_mem_size = "16g")

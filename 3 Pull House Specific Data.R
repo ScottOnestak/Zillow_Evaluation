@@ -1,7 +1,7 @@
 #Project: Zillow Tracker
 #Code: 3 Pull House Specific Data
 #Author: Scott Onestak
-#Last Executed: 2/20/2022
+#Last Executed: 8/10/2022
 
 
 #----------------------------------   Cannot run with chrome open   ----------------------------------
@@ -19,7 +19,7 @@ library(RSelenium)
 
 #Selenium
 ##binman::list_versions("chromedriver") <- command to get the chrome version number to use
-port = 2000L
+port = 4002L
 
 #Read in prior
 prior = read.csv("Data/finalDataset.csv",header=T,stringsAsFactors=F)
@@ -42,7 +42,7 @@ i = 1
 j = 0
 
 #Loop through scraper
-while(i <= dim(theListDedup)[1] & j <= 50){
+while(i <= dim(theListDedup)[1] & j <= 25){
   cat(i,"\n",sep="")
   
   if(dim(zpid_skip %>% inner_join(.,current[i,c("zpid","soldDate")],by=c("zpid","soldDate")))[1]<=0){
@@ -56,11 +56,12 @@ while(i <= dim(theListDedup)[1] & j <= 50){
         html_nodes("div") %>% 
         html_nodes("script") %>%
         html_text()
+      Sys.sleep(5)
     } else {
       #if that fails...try Selenium method
       j = j + 1
       port = as.integer(port+1)
-      rD = rsDriver(browser="chrome", port=port, chromever = "97.0.4692.36", geckover = NULL, verbose = F)
+      rD = rsDriver(browser="chrome", port=port, chromever = "103.0.5060.53", geckover = NULL, verbose = F)
       remDr = rD[["client"]]
       remDr$navigate(theLink)
       

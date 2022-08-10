@@ -1,7 +1,7 @@
 #Project: Zillow Tracker
 #Code: 6 Build Test Cases
 #Author: Scott Onestak
-#Last Executed: 2/14/2022
+#Last Executed: 7/10/2022
 
 #library
 library(tidyverse)
@@ -44,11 +44,13 @@ med_bed_price = median(theDataPriceFilter$bed,na.rm=T)
 
 #Do some reasonableness adjustments... some max and mins are extreme/questionable data values
 min_baths = 1
-max_baths = 4
+max_baths = 3
 min_livingArea = 1000
-max_livingArea = 3000
+max_livingArea = 2500
 min_bed = 1
 max_bed = 4
+min_rate = 3.00
+max_rate = 6.00
 
 #Get the median of unimportant (keep static) remaining variables
 yearBuilt = median(theData$yearBuilt,na.rm=T)
@@ -109,15 +111,18 @@ colnames(parkingType) = c("parkingStreet","parkingOffStreet",
 finalDataset = NA
 for(i in seq(from=min_baths,to=max_baths,by=1)){
   for(j in seq(from=min_bed,to=max_bed,by=1)){
-    for(k in seq(from=min_livingArea,to=max_livingArea,by=100)){
-      temp = avgSuburbScore %>% mutate(baths = i,
-                                       beds = j,
-                                       livingArea = k,
-                                       lotArea = k/median_area_ratio)
-      if(i==min_baths & j==min_bed & k==min_livingArea){
-        finalDataset = temp
-      } else {
-        finalDataset = rbind(finalDataset,temp)
+    for(k in seq(from=min_livingArea,to=max_livingArea,by=250)){
+      for(l in seq(from=min_rate,to=max_rate,by=0.50)){
+          temp = avgSuburbScore %>% mutate(baths = i,
+                                           beds = j,
+                                           livingArea = k,
+                                           lotArea = k/median_area_ratio,
+                                           avg_rate = l)
+          if(i==min_baths & j==min_bed & k==min_livingArea & l==min_rate){
+            finalDataset = temp
+          } else {
+            finalDataset = rbind(finalDataset,temp)
+          }
       }
     }
   }

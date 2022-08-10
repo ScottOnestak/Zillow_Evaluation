@@ -1,16 +1,56 @@
 #Project: Zillow Tracker
 #Code: 5 Evaluation
 #Author: Scott Onestak
-#Last Executed: 2/20/2022
+#Last Executed: 7/10/2022
 
 #Packages
 library(tidyverse)
 library(stringr)
 library(h2o)
+library(fredr)
 
 #Data
 theData = read.csv('Data/cleanedFinalDataset.csv',header=T,stringsAsFactors=F)
 redfin = read.csv('Data/redfin_data_for_asset_appreciation.csv',header=T,stringsAsFactors=F)
+
+#Pull in Interest Rate Data from FRED
+fredr_set_key("1e7ed343d3ccb82af108e43174bf8f1f")
+fred_30yr = fredr(series_id = "MORTGAGE30US",
+                  observation_start = as.Date("2019-01-01",format="%Y-%m-%d"),
+                  frequency = "w") %>% select(date,value) %>% rename(rate=value)
+fred_start = min(fred_30yr$date)
+fred_end = Sys.Date()
+
+rate = NA
+for(i in seq(from=fred_start,to=fred_end,by=1)){
+  if(i %in% fred_30yr$date){
+    rate = unlist(fred_30yr %>% filter(date == i) %>% select(rate))
+  }
+  
+  if(i == fred_start){
+    mortgage_rates = as.data.frame(cbind(i,rate))
+  } else {
+    mortgage_rates = rbind(mortgage_rates,
+                           as.data.frame(cbind(i,rate)))
+  }
+}
+colnames(mortgage_rates) = c("date","rate")
+mortgage_rates$date = as.Date(mortgage_rates$date,origin = "1970-01-01")
+
+#Create lag... 30 - 45 days typically between accepting offer and closing
+#A person would often lock in the interest rate at that time
+mortgage_rates$avg_rate = NA
+mortgage_cuttoff = fred_start + 45
+for(i in seq(from=1,to=dim(mortgage_rates)[1],by=1)){
+  if(mortgage_rates[i,"date"]>=mortgage_cuttoff){
+    mortgage_rates[i,"avg_rate"] = round(mean(unlist(mortgage_rates %>% 
+                                                      filter(date>=mortgage_rates[i,"date"]-45 & 
+                                                             date<=mortgage_rates[i,"date"]-30) %>%
+                                                      select(rate))),2)
+  }
+}
+mortgage_rates = mortgage_rates %>% filter(!is.na(avg_rate))
+colnames(mortgage_rates)[1] = "soldDate"
 
 #Create field to determine which month to join to
 theData$join_date = substr(theData$soldDate,1,7)
@@ -37,6 +77,7 @@ redfin$appreciation = ((price_now - redfin$Median_Price) / redfin$Median_Price) 
 #Join Appreciation and Adjust Sold Price
 theData = theData %>% 
             left_join(.,redfin %>% select(join_date,appreciation),by="join_date") %>%
+            left_join(.,mortgage_rates %>% select(soldDate,avg_rate),by="soldDate") %>%
             mutate(soldPriceAdj = soldPrice * appreciation)
 
 #Filter out suburbs with little volume
@@ -60,11 +101,11 @@ y = "soldPriceAdj"
 x = setdiff(colnames(theData),c(y,"Address","Street","City","State","ZipCode","zpid","url","soldPrice","area",
                                 "latitude","longitude","soldDate","Type","description","cooling","heating",
                                 "parkingLocation","flooring","daysToSale","sellDiff","sellDiffPrct","pricePerSquareFoot",
-                                "join_date","appreciation","listPrice","listDate","taxAssessedValue","roof","style"))
+                                "join_date","appreciation","listPrice","listDate","taxAssessedValue","roof","style","avg_rate"))
 H2O_theData = as.h2o(theData)
 
 #Random Forest
-#R^2 only 40%. Not good.  Try others to see if better fit for data.
+#R^2 only 42%. Not good.  Try others to see if better fit for data.
 rf = h2o.randomForest(y=y,
                       x=x,
                       training_frame=H2O_theData,
@@ -76,7 +117,7 @@ h2o.saveModel(rf,path="Models/",force=T)
 rf_r2 = h2o.r2(rf)
 
 #Gradient Boosting Machine
-#R^2 87%.  Much better fit, and not worried about overfitting because the model is cross-validated.
+#R^2 90%.  Much better fit, and not worried about overfitting because the model is cross-validated.
 #Best model.  Use gbm in understanding influences on pricing.
 gbm = h2o.gbm(y=y,
               x=x,
@@ -98,11 +139,11 @@ h2o.shutdown(prompt=F)
 write.csv(rf_varimp_curr,"Results/randomForestVariableImportance.csv",row.names=F)
 write.csv(gbm_varimp_curr,"Results/GBMVariableImportance.csv",row.names=F)
 
-#Build linear model - Top Variables Only Account for 53% of variability
+#Build linear model - Top Variables Only Account for 54% of variability
 #Suburb is probably too split in the linear model but is an important variable overall
 #Some signs don't make sense logically.  Bed should logically be positive, not negative.
 #Conclusion: Not really a linear relationship. Nonparametric model needed.  GBM best option.
-lm = lm(soldPriceAdj ~ suburb + baths + area + walk_score + beds,
+lm = lm(soldPriceAdj ~ suburb + avg_rate + baths + area + walk_score + beds,
          data=theData)
 summary(lm)
 

@@ -1,7 +1,7 @@
 #Project: Zillow Tracker
 #Code: 7 Evaluate Test Cases
 #Author: Scott Onestak
-#Last Executed: 2/17/2022
+#Last Executed: 7/10/2022
 
 #library
 library(h2o)
@@ -95,7 +95,7 @@ baseheating = unlist(heating %>% filter(heatingForcedAir == 1) %>% select(soldPr
 heating = heating %>% mutate(ForcedAirHeatingComp = (soldPricePred-baseheating)/baseheating)
 
 #Calculate Difference by Suburb
-suburb = testCases %>% filter(beds == 3 & baths == 2 & livingArea == 1900) %>% group_by(suburb) %>% summarise(soldPricePred = mean(soldPricePred,na.rm=T))
+suburb = testCases %>% filter(beds == 3 & baths == 2 & livingArea == 2000) %>% group_by(suburb) %>% summarise(soldPricePred = mean(soldPricePred,na.rm=T))
 basesuburb = unlist(suburb %>% filter(suburb == "Regent Square") %>% select(soldPricePred))
 suburb = suburb %>% mutate(suburbComp = (soldPricePred-basesuburb)/basesuburb)
 
@@ -157,6 +157,24 @@ area = testCases %>%
 basearea = unlist(area %>% filter(livingArea == 1000) %>% select(soldPricePred))
 area = area %>% mutate(OneThousandComp = (soldPricePred-basearea)/basearea)
 
+#Calculate Difference by Interest Rates
+ratesSuburb = testCases %>%
+                group_by(suburb,avg_rate) %>%
+                summarise(soldPricePred = mean(soldPricePred,na.rm=T)) %>%
+                ungroup()
+baseRateSuburbs = ratesSuburb %>% filter(avg_rate == 3) %>% select(suburb,soldPricePred) %>% rename(base = soldPricePred)
+ratesSuburb = ratesSuburb %>%
+                inner_join(.,baseRateSuburbs,by="suburb") %>%
+                mutate(ThreeComp = (soldPricePred - base)/base) %>%
+                select(-base)
+
+rates = testCases %>%
+          group_by(avg_rate) %>%
+          summarise(soldPricePred = mean(soldPricePred,na.rm=T)) %>%
+          ungroup()
+baseRate = unlist(rates %>% filter(avg_rate == 3) %>% select(soldPricePred))
+rates = rates %>% mutate(ThreeComp = (soldPricePred - baseRate)/baseRate)
+
 #write out files
 write.csv(testCases,"Results/test_results/testCases.csv",row.names = F)
 write.csv(area,"Results/test_results/livingArea.csv",row.names = F)
@@ -175,5 +193,6 @@ write.csv(parking,"Results/test_results/parking.csv",row.names = F)
 write.csv(parkingSuburb,"Results/test_results/parkingBySuburb.csv",row.names = F)
 write.csv(suburb,"Results/test_results/suburb.csv",row.names = F)
 write.csv(suburbPrice,"Results/test_results/suburbPricepoint.csv",row.names = F)
-
+write.csv(rates,"Results/test_results/rates.csv",row.names = F)
+write.csv(ratesSuburb,"Results/test_results/suburbRates.csv",row.names = F)
 
